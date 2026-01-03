@@ -27,7 +27,7 @@ on run argv
     set primaryScreen to item 1 of screens
     set {{pX, pY}, {pW, pH}} to primaryScreen's frame()
     
-    set targetScreen to missing value
+    set currentScreen to missing value
     
     -- Find which screen the window center is currently on
     repeat with i from 1 to (count of screens)
@@ -38,32 +38,112 @@ on run argv
         set sysTop to pH - (sY + sH)
         
         if (wMidX >= sX) and (wMidX < (sX + sW)) and (wMidY >= sysTop) and (wMidY < (sysTop + sH)) then
-            set targetScreen to aScreen
+            set currentScreen to aScreen
+            set currentFrame to {{sX, sY}, {sW, sH}}
             exit repeat
         end if
     end repeat
     
     -- Fallback to primary if not found
-    if targetScreen is missing value then set targetScreen to primaryScreen
+    if currentScreen is missing value then 
+        set currentScreen to primaryScreen
+        set currentFrame to primaryScreen's frame()
+    end if
+
+    -- Get properties of current screen
+    set {{cX, cY}, {cW, cH}} to currentFrame
+    set {{vX, vY}, {vW, vH}} to currentScreen's visibleFrame()
+    set currSysX to vX
     
-    -- Get visible frame (work area excluding dock/menu)
-    set {{vX, vY}, {vW, vH}} to targetScreen's visibleFrame()
+    -- Check if currently snapped
+    set tolerance to 30
+    set isSnappedLeft to false
+    set isSnappedRight to false
+    
+    -- Check widths and heights
+    set wDiff to wW - (vW / 2)
+    if wDiff < 0 then set wDiff to -wDiff
+    
+    set hDiff to wH - vH
+    if hDiff < 0 then set hDiff to -hDiff
+    
+    if (wDiff < tolerance) and (hDiff < tolerance) then
+        -- Check positions
+        set xDiffLeft to wX - currSysX
+        if xDiffLeft < 0 then set xDiffLeft to -xDiffLeft
+        
+        set xDiffRight to wX - (currSysX + (vW / 2))
+        if xDiffRight < 0 then set xDiffRight to -xDiffRight
+        
+        if xDiffLeft < tolerance then set isSnappedLeft to true
+        if xDiffRight < tolerance then set isSnappedRight to true
+    end if
+    
+    set targetScreen to currentScreen
+    
+    -- Logic to move to adjacent screen
+    if (direction is "left" and isSnappedLeft) then
+        set bestX to -1000000
+        set candidate to missing value
+        
+        repeat with i from 1 to (count of screens)
+            set s to item i of screens
+            if s is not currentScreen then
+                set {{sX, sY}, {sW, sH}} to s's frame()
+                -- Look for screen to the left (sX < cX)
+                if sX < cX then
+                    if sX > bestX then
+                        set bestX to sX
+                        set candidate to s
+                    end if
+                end if
+            end if
+        end repeat
+        if candidate is not missing value then set targetScreen to candidate
+        
+    else if (direction is "right" and isSnappedRight) then
+        set bestX to 1000000
+        set candidate to missing value
+        
+        repeat with i from 1 to (count of screens)
+            set s to item i of screens
+            if s is not currentScreen then
+                set {{sX, sY}, {sW, sH}} to s's frame()
+                -- Look for screen to the right (sX > cX)
+                if sX > cX then
+                    if sX < bestX then
+                        set bestX to sX
+                        set candidate to s
+                    end if
+                end if
+            end if
+        end repeat
+        if candidate is not missing value then set targetScreen to candidate
+    end if
+    
+    -- Get visible frame of target screen
+    set {{tVX, tVY}, {tVW, tVH}} to targetScreen's visibleFrame()
     
     -- Convert Visible Frame Cocoa -> System Events
-    set finalSysY to pH - (vY + vH)
-    set finalSysX to vX
+    set finalSysY to pH - (tVY + tVH)
+    set finalSysX to tVX
     
     -- Calculate new bounds
     if direction is "left" then
         set newX to finalSysX
         set newY to finalSysY
-        set newW to vW / 2
-        set newH to vH
-    else
-        set newX to finalSysX + (vW / 2)
+        set newW to tVW / 2
+        set newH to tVH
+    else if direction is "right" then
+        set newX to finalSysX + (tVW / 2)
         set newY to finalSysY
-        set newW to vW / 2
-        set newH to vH
+        set newW to tVW / 2
+        set newH to tVH
+    else if direction is "full" then
+        set newX to finalSysX
+        set newY to finalSysY
+        set newW to tVW
+        set newH to tVH
     end if
     
     -- Apply changes
@@ -100,7 +180,7 @@ vim.api.nvim_create_user_command("SnapWindow", function(opts)
 end, {
     nargs = 1,
     complete = function()
-        return { "left", "right" }
+        return { "left", "right", "full" }
     end,
     desc = "Snap Neovide window to left or right of the current screen"
 })
