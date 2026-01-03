@@ -1,5 +1,5 @@
 -- Helper function for transparency and blur
-vim.g.neovide_opacity = 0.8
+vim.g.neovide_opacity = 0.9
 vim.g.neovide_window_blurred = true 
 
 vim.api.nvim_create_autocmd("UIEnter", {
@@ -10,3 +10,4 @@ vim.api.nvim_create_autocmd("UIEnter", {
     vim.cmd("silent !osascript -e 'tell application \"System Events\" to set frontmost of processes whose name contains \"neovide\" to true'")
   end,
 })
+
