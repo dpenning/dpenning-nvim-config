@@ -24,3 +24,6 @@ vim.keymap.set('n', '<leader>h', fzf.help_tags, { desc = 'Fzf Help' })
 
 -- Open an 80-character wide vertical split with a terminal
 vim.keymap.set('n', '<leader>T', ':Term80<CR>', { desc = 'Terminal (80 chars)' })
+
+-- Ask Gemma helper about Neovim actions
+vim.keymap.set('n', '<leader>a', ':HowDoI<CR>', { desc = 'Gemma helper ask' })

@@ -28,10 +28,13 @@ vim.api.nvim_create_autocmd({ "BufWinEnter", "FileType" }, {
 		}
 		local excluded_buftypes = { "terminal", "nofile", "quickfix", "prompt" }
 
-		if
-			vim.tbl_contains(excluded_filetypes, vim.bo.filetype)
-			or vim.tbl_contains(excluded_buftypes, vim.bo.buftype)
-		then
+		local filetype = vim.bo.filetype
+		local buftype = vim.bo.buftype
+		local is_c_like = filetype == "c" or filetype == "cpp"
+		local should_show = is_c_like
+		local is_excluded = vim.tbl_contains(excluded_filetypes, filetype)
+			or vim.tbl_contains(excluded_buftypes, buftype)
+		if is_excluded or not should_show then
 			vim.opt_local.colorcolumn = ""
 		else
 			vim.opt_local.colorcolumn = "80"

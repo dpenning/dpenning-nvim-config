@@ -1,27 +1,45 @@
 return {
-    "nvim-treesitter/nvim-treesitter",
-    build = ":TSUpdate",
-    lazy = false, -- Recommended by the new nvim-treesitter version
-    config = function()
-        -- 1. Install Parsers
-        -- The "configs" module is gone. We now use .install() directly.
-        require("nvim-treesitter").install({ "c", "lua", "vim", "vimdoc", "python", "cpp" })
+  "nvim-treesitter/nvim-treesitter",
+  build = ":TSUpdate",
+  lazy = false, -- plugin upstream explicitly disallows lazy-loading
+  config = function()
+    local languages = { "c", "lua", "vim", "vimdoc", "python", "cpp", "zig" }
+    local ts = require("nvim-treesitter")
 
-        -- 2. Enable Highlighting
-        -- We now use Neovim's built-in treesitter support via autocommands.
-        vim.api.nvim_create_autocmd("FileType", {
-            callback = function()
-                -- Attempt to start treesitter. pcall prevents errors if no parser is available.
-                pcall(vim.treesitter.start)
-            end,
-        })
+    -- Install missing parsers once during startup and wait so we do not spawn
+    -- new downloads on every launch. Skip if the tree-sitter CLI is missing to
+    -- avoid spamming the command line with errors on every start.
+    if vim.fn.executable("tree-sitter") == 1 then
+      local installed = {}
+      for _, lang in ipairs(ts.get_installed("parsers")) do
+        installed[lang] = true
+      end
 
-        -- 3. Enable Indentation
-        -- This is the new way to enable indentation provided by the plugin.
-        vim.api.nvim_create_autocmd("FileType", {
-            callback = function()
-                vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
-            end,
-        })
+      local missing = {}
+      for _, lang in ipairs(languages) do
+        if not installed[lang] then
+          table.insert(missing, lang)
+        end
+      end
+
+      if #missing > 0 then
+        local ok, job = pcall(ts.install, missing)
+        if ok and job and job.wait then
+          job:wait(300000)
+        end
+      end
     end
+
+    vim.api.nvim_create_autocmd("FileType", {
+      callback = function()
+        pcall(vim.treesitter.start)
+      end,
+    })
+
+    vim.api.nvim_create_autocmd("FileType", {
+      callback = function()
+        vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+      end,
+    })
+  end,
 }

@@ -11,6 +11,9 @@ return {
       -- To customize, use vim.lsp.config('clangd', { ... }) before enabling.
       vim.lsp.enable('clangd')
 
+      -- Basic Zig language server support via zls
+      vim.lsp.enable('zls')
+
       -- Keymaps for LSP actions (optional, but recommended)
       vim.api.nvim_create_autocmd('LspAttach', {
         group = vim.api.nvim_create_augroup('UserLspConfig', {}),

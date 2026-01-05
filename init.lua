@@ -7,6 +7,8 @@ require("commands.smart_quit")
 require("commands.explorer_touch")
 require("commands.reload")
 require("commands.terminal_split")
+require("commands.theme")
+require("commands.theme_debug")
 require("theme.midnight_blue")
 
 if vim.g.neovide then
