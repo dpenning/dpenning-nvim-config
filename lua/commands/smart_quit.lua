@@ -12,6 +12,14 @@ local function smart_quit_disabled()
   return false
 end
 
+local function open_explorer(bang)
+  if bang then
+    pcall(vim.cmd, "silent! edit!")
+  end
+
+  vim.cmd("Explorer")
+end
+
 -- 1. The SmartQuit Command
 -- Handles the logic: "If in file, go to explorer. If in explorer, quit."
 vim.api.nvim_create_user_command("SmartQuit", function(opts)
@@ -34,12 +42,7 @@ vim.api.nvim_create_user_command("SmartQuit", function(opts)
     end
   else
     -- We are in a file: go back to explorer
-    -- We use "edit!" if bang is present to discard changes
-    if opts.bang then
-      vim.cmd("Ex!") 
-    else
-      vim.cmd("Ex")
-    end
+    open_explorer(opts.bang)
   end
 end, { bang = true })
 

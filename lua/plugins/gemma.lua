@@ -4,7 +4,9 @@ return {
     name = "gemma_nvim_helper",
     lazy = false,
     config = function()
-      require("gemma_nvim_helper").setup()
+      require("gemma_nvim_helper").setup({
+        use_help_context = true,
+      })
     end,
   },
 }

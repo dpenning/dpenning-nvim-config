@@ -15,6 +15,16 @@ vim.keymap.set('n', '<leader>g', fzf.live_grep, { desc = 'Fzf Live Grep' })
 -- Buffers (switch between open files)
 vim.keymap.set('n', '<leader>b', fzf.buffers, { desc = 'Fzf Buffers' })
 
+-- Bufferline navigation
+vim.keymap.set('n', '<S-h>', '<cmd>BufferLineCyclePrev<CR>', { desc = 'Previous buffer' })
+vim.keymap.set('n', '<S-l>', '<cmd>BufferLineCycleNext<CR>', { desc = 'Next buffer' })
+vim.keymap.set('n', '<leader>bp', '<cmd>BufferLinePick<CR>', { desc = 'Pick buffer' })
+vim.keymap.set('n', '<leader>bd', '<cmd>BufferLinePickClose<CR>', { desc = 'Close buffer' })
+
+-- Neo-tree file explorer
+vim.keymap.set('n', '<leader>e', '<cmd>Neotree toggle left<CR>', { desc = 'Neo-tree toggle' })
+vim.keymap.set('n', '<leader>E', '<cmd>Neotree focus<CR>', { desc = 'Neo-tree focus' })
+
 -- Help Tags (search help documentation)
 vim.keymap.set('n', '<leader>h', fzf.help_tags, { desc = 'Fzf Help' })
 

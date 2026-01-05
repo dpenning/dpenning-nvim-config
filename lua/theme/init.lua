@@ -36,9 +36,9 @@ local function apply_config(config, opts)
     }
 end
 
-function M.apply(name_or_config)
+function M.apply(name_or_config, opts)
     if type(name_or_config) == "table" then
-        apply_config(name_or_config)
+        apply_config(name_or_config, opts)
         return
     end
 
@@ -77,9 +77,19 @@ end
 
 function M.load(default_name)
     local saved = storage.load()
-    if saved and presets.get(saved) then
-        M.apply(saved)
-        return saved
+    if type(saved) == "table" then
+        if saved.type == "custom" and saved.config then
+            apply_config(saved.config, { name = saved.name or "custom" })
+            return saved.name or "custom"
+        elseif saved.type == "preset" and saved.name and presets.get(saved.name) then
+            M.apply(saved.name)
+            return saved.name
+        end
+    elseif type(saved) == "string" then
+        if presets.get(saved) then
+            M.apply(saved)
+            return saved
+        end
     end
     if default_name then
         M.apply(default_name)
