@@ -5,6 +5,19 @@ vim.opt.foldlevel = 99
 vim.opt.foldlevelstart = 99
 vim.opt.foldenable = true
 
+-- Provide line number with relative for easy navigation
+vim.opt.number = true
+vim.opt.relativenumber = true
+
+-- Use open should keep the buffers from being opened multiple times
+-- meaning that if you try to open editor.lua and its already open it
+-- will just activate it.
+vim.opt.switchbuf = "useopen"
+
+-- Splits should usually open to the right
+vim.opt.splitright = true
+vim.opt.splitbelow = true
+
 -- If a buffer lacks a treesitter parser, fall back to indent folds
 vim.api.nvim_create_autocmd("FileType", {
 	callback = function(args)
@@ -22,6 +35,7 @@ vim.api.nvim_create_autocmd("FileType", {
 	end,
 })
 
+-- TODO decide whether we want to keep this
 -- Only show the color column in real files (editor mode)
 vim.api.nvim_create_autocmd({ "BufWinEnter", "FileType" }, {
 	pattern = "*",
@@ -42,7 +56,6 @@ vim.api.nvim_create_autocmd({ "BufWinEnter", "FileType" }, {
 			"gitrebase",
 			"gitsendemail",
 			"git",
-			"alpha",
 			"dashboard",
 			"NvimTree",
 			"neo-tree",
@@ -92,6 +105,7 @@ local function delete_initial_if_safe()
 	end
 end
 
+-- TODO decide whether we want to keep this.
 vim.api.nvim_create_autocmd({ "BufAdd", "BufEnter" }, {
 	group = cleanup_group,
 	callback = function(args)
