@@ -1,39 +1,43 @@
----------------------
--- FXF implenentation
----------------------
+-- Taken post leaders f, b, e, t
+--
+-- Try to use the following after post leader
+-- p -> previous
+-- n -> next
+-- f -> file
+-- g -> content
+-- b -> buffer
+-- c -> clear
+
+--------------------------------
+-- <Leader f> FXF implenentation
+--------------------------------
 
 local fzf = require('fzf-lua')
 
--- Find Files (matches filenames)
--- Use this to open files in your project
-vim.keymap.set('n', '<leader>f', fzf.files, { desc = 'Fzf Files' })
+vim.keymap.set('n', '<leader>ff', fzf.files, { desc = 'Search file names' })
+vim.keymap.set('n', '<leader>fg', fzf.live_grep, { desc = 'Search Content of files' })
+vim.keymap.set('n', '<leader>fb', fzf.buffers, { desc = 'Search open buffers' })
 
--- Live Grep (matches text inside files)
--- Uses ripgrep to search for strings as you type
-vim.keymap.set('n', '<leader>g', fzf.live_grep, { desc = 'Fzf Live Grep' })
+-----------------------------
+-- <Leader b> Buffer Choosing 
+-----------------------------
 
--- Buffers (switch between open files)
-vim.keymap.set('n', '<leader>b', fzf.buffers, { desc = 'Fzf Buffers' })
+vim.keymap.set('n', '<leader>bp', '<cmd>BufferLineCyclePrev<CR>', { desc = 'Open the previous buffer' })
+vim.keymap.set('n', '<leader>bn', '<cmd>BufferLineCycleNext<CR>', { desc = 'Open the next buffer' })
+vim.keymap.set('n', '<leader>bc', '<cmd>BufferLinePick<CR>', { desc = 'Pick a buffer from the buffer line by index' })
 
--- Bufferline navigation
-vim.keymap.set('n', '<S-h>', '<cmd>BufferLineCyclePrev<CR>', { desc = 'Previous buffer' })
-vim.keymap.set('n', '<S-l>', '<cmd>BufferLineCycleNext<CR>', { desc = 'Next buffer' })
-vim.keymap.set('n', '<leader>bp', '<cmd>BufferLinePick<CR>', { desc = 'Pick buffer' })
-vim.keymap.set('n', '<leader>bd', '<cmd>BufferLinePickClose<CR>', { desc = 'Close buffer' })
+----------------------------
+-- Error message integration
+----------------------------
 
--- Neo-tree file explorer
-vim.keymap.set('n', '<leader>e', '<cmd>Neotree toggle left<CR>', { desc = 'Neo-tree toggle' })
-vim.keymap.set('n', '<leader>E', '<cmd>Neotree focus<CR>', { desc = 'Neo-tree focus' })
-
--- Help Tags (search help documentation)
-vim.keymap.set('n', '<leader>h', fzf.help_tags, { desc = 'Fzf Help' })
+vim.keymap.set('n', '<leader>ee', vim.diagnostic.open_float, { desc = 'Show diagnostic error' })
+vim.keymap.set('n', '<leader>ep', vim.diagnostic.goto_prev, { desc = 'Previous diagnostic error' })
+vim.keymap.set('n', '<leader>en', vim.diagnostic.goto_next, { desc = 'Next diagnostic error' })
 
 ----------------------
 -- User implementation
 ----------------------
 
 -- Open an 80-character wide vertical split with a terminal
-vim.keymap.set('n', '<leader>T', ':Term80<CR>', { desc = 'Terminal (80 chars)' })
-
--- Ask Gemma helper about Neovim actions
-vim.keymap.set('n', '<leader>a', ':HowDoI<CR>', { desc = 'Gemma helper ask' })
+vim.keymap.set('n', '<leader>tt', ':Term80', { desc = 'Open the Terminal 80' })
+vim.keymap.set('n', '<leader>tbc', ':TerminalClear', { desc = 'Clear the terminal and enter insert mode'})
