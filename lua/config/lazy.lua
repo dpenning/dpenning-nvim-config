@@ -18,11 +18,6 @@ vim.g.maplocalleader = " "
 
 -- 3. Load lazy.nvim
 -- This tells Lazy to look for plugin specs in the "lua/plugins" folder
--- Fix: Manually set the module return value to avoid circular dependency issues
--- when lazy.nvim scans the 'lua/plugins' directory.
-local M = {}
-package.loaded["plugins.lazy"] = M
-
 require("lazy").setup("plugins")
 
-return M
+return {}
