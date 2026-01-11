@@ -36,33 +36,74 @@ local function apply_config(config, opts)
     }
 end
 
+function M.list()
+    local all_themes = {}
+    
+    -- Add presets
+    local preset_list = presets.list()
+    for _, p in ipairs(preset_list) do
+        table.insert(all_themes, p)
+    end
+
+    -- Add custom themes
+    local custom = storage.list_custom()
+    for name, config in pairs(custom) do
+        table.insert(all_themes, {
+            name = name,
+            label = name, -- Custom themes might not have a separate label
+            description = config.description or "Custom User Theme",
+            type = "custom",
+            config = config, -- Store config for easy access
+            foreground = config.foreground,
+            background = config.background,
+            highlight = config.highlight,
+            accent = config.accent,
+        })
+    end
+    
+    return all_themes
+end
+
+function M.get(name)
+    local preset = presets.get(name)
+    if preset then
+        return preset
+    end
+    local custom = storage.get_custom(name)
+    if custom then
+        return {
+            name = name,
+            description = custom.description or "Custom User Theme",
+            type = "custom",
+            foreground = custom.foreground,
+            background = custom.background,
+            highlight = custom.highlight,
+            accent = custom.accent,
+        }
+    end
+    return nil
+end
+
 function M.apply(name_or_config, opts)
     if type(name_or_config) == "table" then
         apply_config(name_or_config, opts)
         return
     end
 
-    local preset = presets.get(name_or_config)
-    if not preset then
+    local theme_data = M.get(name_or_config)
+    if not theme_data then
         vim.notify(string.format("Theme '%s' not found", tostring(name_or_config)), vim.log.levels.WARN)
         return
     end
 
-    apply_config(preset, { name = preset.name })
+    apply_config(theme_data, { name = theme_data.name })
 end
 
--- Compatibility shim so existing requires that call theme.setup still work
-function M.setup(config)
-    apply_config(config or {})
+function M.delete(name)
+    return storage.delete_custom(name)
 end
 
-function M.list()
-    return presets.list()
-end
 
-function M.get(name)
-    return presets.get(name)
-end
 
 function M.current_name()
     return M.current
@@ -105,7 +146,8 @@ function M.save(name)
         return false
     end
 
-    if not presets.get(target) then
+    local theme_data = M.get(target)
+    if not theme_data then
         vim.notify(string.format("Cannot save unknown theme '%s'", target), vim.log.levels.WARN)
         return false
     end

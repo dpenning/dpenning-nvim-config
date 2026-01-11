@@ -2,6 +2,8 @@ local theme = require("theme")
 local generator = require("theme.generator")
 local constants = require("theme.constants")
 
+local DEBUG_NS = vim.api.nvim_create_namespace("theme_debug")
+
 local block = function(text)
     return string.format("████ %s ████", text)
 end
@@ -570,17 +572,15 @@ end
 local function populate_buffer(buf)
     local lines, highlights = build_lines()
     vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+    vim.api.nvim_buf_clear_namespace(buf, DEBUG_NS, 0, -1)
 
     for _, region in ipairs(highlights) do
         local group = highlight_exists(region.group) and region.group or "Normal"
-        vim.api.nvim_buf_add_highlight(
-            buf,
-            -1,
-            group,
-            region.row,
-            region.start_col,
-            region.end_col
-        )
+        vim.api.nvim_buf_set_extmark(buf, DEBUG_NS, region.row, region.start_col, {
+            end_row = region.row,
+            end_col = region.end_col,
+            hl_group = group,
+        })
     end
 
     vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
@@ -595,8 +595,22 @@ local function open_window(buf)
     vim.api.nvim_set_option_value("relativenumber", false, { win = win })
 end
 
+local function refresh_buffer(buf)
+    vim.schedule(function()
+        if not vim.api.nvim_buf_is_valid(buf) then
+            return
+        end
+        vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
+        populate_buffer(buf)
+    end)
+end
+
 vim.api.nvim_create_user_command("ThemeDebug", function()
     local buf = create_buffer()
     populate_buffer(buf)
     open_window(buf)
 end, {})
+
+return {
+    refresh = refresh_buffer,
+}

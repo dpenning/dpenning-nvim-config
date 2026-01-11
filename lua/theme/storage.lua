@@ -2,17 +2,23 @@ local M = {}
 
 local COLOR_KEYS = { "foreground", "background", "highlight", "accent" }
 
-local function state_path()
+local function get_data_dir()
     local state_dir = vim.fn.stdpath("state")
     if not state_dir or state_dir == "" then
         state_dir = vim.fn.stdpath("data")
     end
     local dir = vim.fn.fnamemodify(state_dir .. "/theme", ":p")
     vim.fn.mkdir(dir, "p")
-    return dir .. "/preference.txt"
+    return dir
 end
 
-local preference_path = state_path()
+local function preference_path()
+    return get_data_dir() .. "/preference.txt"
+end
+
+local function themes_db_path()
+    return get_data_dir() .. "/themes.json"
+end
 
 local function trim(s)
     return (s:gsub("^%s*(.-)%s*$", "%1"))
@@ -32,8 +38,8 @@ local function json_decode(text)
     return vim.fn.json_decode(text)
 end
 
-local function read_content()
-    local file = io.open(preference_path, "r")
+local function read_file(path)
+    local file = io.open(path, "r")
     if not file then
         return nil
     end
@@ -48,14 +54,14 @@ local function read_content()
     return trim(content)
 end
 
-local function write_text(text)
+local function write_file(path, text)
     local ok, err = pcall(function()
-        local file = assert(io.open(preference_path, "w"))
+        local file = assert(io.open(path, "w"))
         file:write(text)
         file:close()
     end)
     if not ok then
-        vim.notify(string.format("Failed to save theme preference: %s", err), vim.log.levels.ERROR)
+        vim.notify(string.format("Failed to write to %s: %s", path, err), vim.log.levels.ERROR)
         return false
     end
     return true
@@ -66,6 +72,10 @@ local function canonical_config(config)
         return nil
     end
     local sanitized = {}
+    -- Save description if present
+    if config.description and type(config.description) == "string" then
+        sanitized.description = trim(config.description)
+    end
     for _, key in ipairs(COLOR_KEYS) do
         local value = config[key]
         if type(value) ~= "string" then
@@ -80,50 +90,72 @@ local function canonical_config(config)
     return sanitized
 end
 
-local function write_state(state)
-    local ok, encoded = pcall(json_encode, state)
+local function load_db()
+    local content = read_file(themes_db_path())
+    if not content or content == "" then
+        return {}
+    end
+    local ok, decoded = pcall(json_decode, content)
+    if ok and type(decoded) == "table" then
+        return decoded
+    end
+    return {}
+end
+
+local function save_db(db)
+    local ok, encoded = pcall(json_encode, db)
     if not ok then
-        vim.notify(string.format("Failed to serialize theme preference: %s", encoded), vim.log.levels.ERROR)
         return false
     end
-    return write_text(encoded)
+    return write_file(themes_db_path(), encoded)
 end
 
 function M.path()
-    return preference_path
+    return preference_path()
 end
 
+-- Loads the current *active* preference (what theme is selected)
 function M.load()
-    local content = read_content()
+    local content = read_file(preference_path())
     if not content or content == "" then
         return nil
     end
 
-    if content:sub(1, 1) == "{" then
-        local ok, decoded = pcall(json_decode, content)
-        if ok and type(decoded) == "table" then
-            if decoded.type == "custom" then
-                local sanitized = canonical_config(decoded.config or {})
-                if sanitized then
-                    return {
-                        type = "custom",
-                        name = decoded.name or "custom",
-                        config = sanitized,
-                    }
-                end
-                return nil
-            elseif decoded.type == "preset" and type(decoded.name) == "string" then
+    -- Legacy/Simple format: just the name
+    if content:sub(1, 1) ~= "{" then
+        return content
+    end
+
+    -- JSON format
+    local ok, decoded = pcall(json_decode, content)
+    if ok and type(decoded) == "table" then
+        if decoded.type == "preset" then
+            return { type = "preset", name = decoded.name }
+        elseif decoded.type == "custom" then
+            -- Fallback: if we have a full config in preference, use it
+            if decoded.config then
                 return {
-                    type = "preset",
+                    type = "custom",
+                    name = decoded.name or "custom",
+                    config = canonical_config(decoded.config),
+                }
+            end
+             -- Otherwise, try to find it in the DB
+            local db = load_db()
+            local theme = db[decoded.name]
+            if theme then
+                return {
+                    type = "custom",
                     name = decoded.name,
+                    config = canonical_config(theme),
                 }
             end
         end
     end
-
-    return content
+    return nil
 end
 
+-- Saves the *active* preference pointer
 function M.save(name)
     if type(name) ~= "string" then
         return false
@@ -132,21 +164,69 @@ function M.save(name)
     if name == "" then
         return false
     end
-    return write_text(name)
+    -- We just save the name now. The loader needs to know if it's custom or preset.
+    -- To keep it simple, we'll just save the name string for presets,
+    -- and a JSON object for custom themes pointing to the name.
+    -- But existing code calls M.save("preset_name").
+    
+    -- Let's try to detect if it's a known preset?
+    -- Actually, strict separation is better.
+    -- If M.save is called with a string, we assume it's a name.
+    -- We can just write the name string. M.load handles plain strings.
+    return write_file(preference_path(), name)
 end
 
+-- Returns a map of all custom themes: { [name] = config }
+function M.list_custom()
+    return load_db()
+end
+
+-- Returns a specific custom theme config
+function M.get_custom(name)
+    local db = load_db()
+    return db[name]
+end
+
+-- Saves/Upserts a custom theme into the DB
 function M.save_custom(config, opts)
     local sanitized = canonical_config(config)
     if not sanitized then
         vim.notify("Cannot save invalid custom theme", vim.log.levels.ERROR)
         return false
     end
-    local state = {
+    
+    local name = (opts and opts.name) or "custom"
+    if name == "" then name = "custom" end
+
+    local db = load_db()
+    db[name] = sanitized
+    
+    if not save_db(db) then
+        return false
+    end
+
+    -- Also update the active preference to point to this new custom theme
+    local pref = {
         type = "custom",
-        name = (opts and opts.name) or "custom",
-        config = sanitized,
+        name = name,
+        -- We don't strictly need to duplicate config here, but it's safe for fallback
+        config = sanitized 
     }
-    return write_state(state)
+    local ok, encoded = pcall(json_encode, pref)
+    if ok then
+        write_file(preference_path(), encoded)
+    end
+
+    return true
+end
+
+function M.delete_custom(name)
+    local db = load_db()
+    if not db[name] then
+        return false
+    end
+    db[name] = nil
+    return save_db(db)
 end
 
 return M

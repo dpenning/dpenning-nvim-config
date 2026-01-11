@@ -1,13 +1,20 @@
 local theme = require("theme")
+local creator = require("commands.theme_creator")
 
 local function build_lines(entries, current)
     local lines = {}
     local width = 0
 
-    for _, preset in ipairs(entries) do
-        local marker = preset.name == current and "*" or " "
-        local description = preset.description and (" - " .. preset.description) or ""
-        local line = string.format("%s %s%s", marker, preset.label, description)
+    -- Special entry for creation
+    table.insert(lines, " [+ Create New Theme] ")
+    width = math.max(width, #lines[1])
+    table.insert(lines, "") -- Separator
+
+    for _, entry in ipairs(entries) do
+        local marker = entry.name == current and "*" or " "
+        local delete_btn = entry.type == "custom" and " [X]" or ""
+        local description = entry.description and (" - " .. entry.description) or ""
+        local line = string.format("%s %s%s%s", marker, entry.label, delete_btn, description)
         table.insert(lines, line)
         width = math.max(width, #line)
     end
@@ -17,15 +24,10 @@ end
 
 local function open_theme_picker()
     local entries = theme.list()
-    if #entries == 0 then
-        vim.notify("No themes available", vim.log.levels.WARN)
-        return
-    end
-
     local current_name = theme.current_name()
     local lines, content_width = build_lines(entries, current_name)
-    local width = content_width + 2
-    local max_height = math.max(3, math.floor(vim.o.lines * 0.6))
+    local width = math.max(content_width + 4, 40)
+    local max_height = math.max(5, math.floor(vim.o.lines * 0.6))
     local height = math.min(#lines, max_height)
 
     local buf = vim.api.nvim_create_buf(false, true)
@@ -50,6 +52,8 @@ local function open_theme_picker()
         height = height,
         border = "rounded",
         zindex = 60,
+        title = " Theme Manager ",
+        title_pos = "center",
     })
 
     vim.api.nvim_set_option_value("wrap", false, { win = win })
@@ -62,28 +66,12 @@ local function open_theme_picker()
         config = theme.last_config(),
     }
     local preview_name = current_name
-    local dirty = false
-    local current_index = nil
     local cursor_move_autocmd = nil
-
-    local function set_dirty(flag)
-        dirty = flag
-    end
-
-    local function update_dirty_state(name)
-        if saved_snapshot.name then
-            set_dirty(name ~= saved_snapshot.name)
-        else
-            set_dirty(name ~= nil)
-        end
-    end
 
     local function revert_to_saved()
         if saved_snapshot.name then
             theme.apply(saved_snapshot.name)
-            return
-        end
-        if saved_snapshot.config then
+        elseif saved_snapshot.config then
             theme.apply(saved_snapshot.config)
         end
     end
@@ -94,105 +82,98 @@ local function open_theme_picker()
             pcall(vim.api.nvim_del_autocmd, cursor_move_autocmd)
             cursor_move_autocmd = nil
         end
-        if not opts.keep and dirty then
+        if not opts.keep then
             revert_to_saved()
         end
         if win and vim.api.nvim_win_is_valid(win) then
             vim.api.nvim_win_close(win, true)
-            win = nil
-        end
-        if buf and vim.api.nvim_buf_is_valid(buf) then
-            vim.api.nvim_buf_delete(buf, { force = true })
-            buf = nil
         end
     end
 
-    local function apply_index(idx)
-        local preset = entries[idx]
-        if not preset then
-            return
-        end
-        current_index = idx
-        if preset.name == preview_name then
-            return
-        end
-        preview_name = preset.name
-        theme.apply(preset.name)
-        update_dirty_state(preview_name)
+    local function get_selected_entry(cursor_row)
+        local row = cursor_row or vim.api.nvim_win_get_cursor(win)[1]
+        if row == 1 then return "create" end
+        if row == 2 then return nil end
+        return entries[row - 2]
     end
 
-    local start_index = 1
-    if preview_name then
-        for i, preset in ipairs(entries) do
-            if preset.name == preview_name then
-                start_index = i
-                break
-            end
+    local function apply_preview(row)
+        local selection = get_selected_entry(row)
+        if not selection or selection == "create" or selection.name == preview_name then
+            return
         end
+        preview_name = selection.name
+        theme.apply(selection.name)
     end
-    current_index = start_index
-    vim.api.nvim_win_set_cursor(win, { start_index, 0 })
 
     cursor_move_autocmd = vim.api.nvim_create_autocmd("CursorMoved", {
         buffer = buf,
         callback = function()
-            if not vim.api.nvim_win_is_valid(win) then
-                return
-            end
-            local cursor = vim.api.nvim_win_get_cursor(win)
-            apply_index(cursor[1])
+            if not vim.api.nvim_win_is_valid(win) then return end
+            apply_preview(vim.api.nvim_win_get_cursor(win)[1])
         end,
     })
 
-    local function persist_selection()
-        local selection = entries[current_index or 1]
-        if not selection then
+    local function handle_cr()
+        local selection = get_selected_entry()
+        if not selection then return end
+
+        if selection == "create" then
+            close_picker({ keep = false }) -- Revert to saved before opening creator
+            vim.schedule(function() creator.open() end)
             return
         end
-        if selection.name ~= preview_name then
-            preview_name = selection.name
-            theme.apply(selection.name)
-            update_dirty_state(preview_name)
-        end
-        if not theme.save(selection.name) then
-            return
-        end
-        saved_snapshot = {
-            name = selection.name,
-            config = theme.last_config(),
-        }
-        preview_name = selection.name
-        set_dirty(false)
-        vim.notify(string.format("Theme saved: %s", selection.label), vim.log.levels.INFO)
-    end
 
-    vim.api.nvim_create_autocmd("BufWriteCmd", {
-        buffer = buf,
-        callback = function()
-            persist_selection()
-        end,
-    })
-
-    local function apply_and_close()
-        persist_selection()
+        theme.apply(selection.name)
+        theme.save(selection.name)
         close_picker({ keep = true })
+        vim.notify("Theme saved: " .. selection.label, vim.log.levels.INFO)
     end
 
-    vim.keymap.set("n", "<CR>", apply_and_close, { buffer = buf, nowait = true, silent = true })
-    vim.keymap.set("n", "<Esc>", close_picker, { buffer = buf, nowait = true, silent = true })
-    vim.keymap.set("n", "q", close_picker, { buffer = buf, nowait = true, silent = true })
+    local function handle_delete()
+        local selection = get_selected_entry()
+        if not selection or selection == "create" or selection.type ~= "custom" then
+            return
+        end
 
-    vim.api.nvim_create_autocmd("BufLeave", {
-        buffer = buf,
-        once = true,
-        callback = function()
-            if cursor_move_autocmd then
-                pcall(vim.api.nvim_del_autocmd, cursor_move_autocmd)
-                cursor_move_autocmd = nil
+        local confirm = vim.fn.confirm("Delete theme '" .. selection.name .. "'?", "&Yes\n&No", 2)
+        if confirm == 1 then
+            theme.delete(selection.name)
+            entries = theme.list()
+            local new_lines, _ = build_lines(entries, theme.current_name())
+            vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
+            vim.api.nvim_buf_set_lines(buf, 0, -1, false, new_lines)
+            vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
+            vim.notify("Deleted theme: " .. selection.name, vim.log.levels.INFO)
+        end
+    end
+
+    local function handle_edit()
+        local selection = get_selected_entry()
+        if not selection or selection == "create" or selection.type ~= "custom" then
+            return
+        end
+        close_picker({ keep = true }) -- Keep current preview (which is this theme)
+        vim.schedule(function() creator.open({ name = selection.name }) end)
+    end
+
+    local map_opts = { buffer = buf, nowait = true, silent = true }
+    vim.keymap.set("n", "<CR>", handle_cr, map_opts)
+    vim.keymap.set("n", "x", handle_delete, map_opts)
+    vim.keymap.set("n", "d", handle_delete, map_opts)
+    vim.keymap.set("n", "e", handle_edit, map_opts)
+    vim.keymap.set("n", "<Esc>", function() close_picker({ keep = false }) end, map_opts)
+    vim.keymap.set("n", "q", function() close_picker({ keep = false }) end, map_opts)
+
+    -- Start cursor at current theme
+    if current_name then
+        for i, entry in ipairs(entries) do
+            if entry.name == current_name then
+                vim.api.nvim_win_set_cursor(win, { i + 2, 0 })
+                break
             end
-            close_picker()
-        end,
-    })
+        end
+    end
 end
 
 vim.api.nvim_create_user_command("Theme", open_theme_picker, {})

@@ -2,6 +2,7 @@ local api = vim.api
 local theme = require("theme")
 local generator = require("theme.generator")
 local storage = require("theme.storage")
+local theme_debug = require("commands.theme_debug")
 
 local DEFAULT_CONFIG = {
     foreground = "#cdd6f4",
@@ -15,6 +16,11 @@ local COLOR_FIELDS = {
     { key = "background", label = "Background" },
     { key = "highlight", label = "Highlight" },
     { key = "accent", label = "Accent" },
+}
+
+local META_FIELDS = {
+    { key = "name", label = "Name" },
+    { key = "description", label = "Description" },
 }
 
 local CUSTOM_THEME_NAME = "custom"
@@ -33,19 +39,34 @@ local GRADIENT_SPECS = {
 
 local active_instance = nil
 
+local function notify_theme_change()
+    for _, buf in ipairs(api.nvim_list_bufs()) do
+        if api.nvim_buf_is_valid(buf) and api.nvim_get_option_value("filetype", { buf = buf }) == "theme-debug" then
+            theme_debug.refresh(buf)
+        end
+    end
+end
+
 local function current_theme_config()
     return theme.last_config() or vim.deepcopy(DEFAULT_CONFIG)
 end
 
-local function build_lines(config)
+local function build_lines(config, name)
     local lines = {
         "# Theme Creator",
-        "# Edit the hex values below. Colors update live as you type.",
+        "# Edit the fields below. Colors update live as you type.",
         "# :w saves the theme. :q closes without saving changes.",
         "",
     }
+    for _, field in ipairs(META_FIELDS) do
+        local val = config[field.key]
+        if field.key == "name" and (not val or val == "") then val = name end
+        if field.key == "name" and val == CUSTOM_THEME_NAME then val = "" end
+        table.insert(lines, string.format("%-12s = %s", field.key, val or ""))
+    end
+    table.insert(lines, "")
     for _, field in ipairs(COLOR_FIELDS) do
-        table.insert(lines, string.format("%-10s = %s", field.key, config[field.key] or ""))
+        table.insert(lines, string.format("%-12s = %s", field.key, config[field.key] or ""))
     end
     table.insert(lines, "")
     table.insert(lines, "# Gradient preview (read-only)")
@@ -153,13 +174,30 @@ local function extract_values(buf)
     local result = {}
     local lines = api.nvim_buf_get_lines(buf, 0, -1, false)
     for _, line in ipairs(lines) do
-        local key, value = line:match("^%s*([%w_]+)%s*=%s*(#[%xX]+)")
-        if key and value then
+        local key, value = line:match("^%s*([%w_]+)%s*=%s*(.*)$")
+        if key then
             key = key:lower()
+            value = vim.trim(value)
+            
+            local is_color = false
             for _, field in ipairs(COLOR_FIELDS) do
                 if field.key == key then
-                    result[key] = value
+                    if value:match("^#[%xX]+") then
+                        result[key] = value:match("^(#[%xX]+)")
+                    else
+                        result[key] = value
+                    end
+                    is_color = true
                     break
+                end
+            end
+            
+            if not is_color then
+                for _, field in ipairs(META_FIELDS) do
+                    if field.key == key then
+                        result[key] = value
+                        break
+                    end
                 end
             end
         end
@@ -180,6 +218,13 @@ local function validate_config(values)
         end
         config[field.key] = normalized
     end
+    
+    for _, field in ipairs(META_FIELDS) do
+        if values[field.key] then
+            config[field.key] = values[field.key]
+        end
+    end
+    
     return config, nil
 end
 
@@ -189,6 +234,13 @@ local function configs_equal(a, b)
     end
     for _, field in ipairs(COLOR_FIELDS) do
         if a[field.key] ~= b[field.key] then
+            return false
+        end
+    end
+    -- Also check name/desc? Maybe strictly colors for dirty check
+    -- If name/desc changes, it is dirty.
+    for _, field in ipairs(META_FIELDS) do
+        if (a[field.key] or "") ~= (b[field.key] or "") then
             return false
         end
     end
@@ -217,6 +269,7 @@ local function perform_preview(instance)
     local config, err = validate_config(values)
     if config then
         theme.apply(config, { name = CUSTOM_THEME_NAME })
+        notify_theme_change()
         instance.last_preview_config = vim.deepcopy(config)
         instance.dirty = not configs_equal(config, instance.saved_config)
         if instance.dirty then
@@ -263,18 +316,32 @@ local function persist_theme(instance)
         vim.notify(err or "Enter valid hex colors", vim.log.levels.WARN)
         return
     end
-    config.name = CUSTOM_THEME_NAME
-    theme.apply(config, { name = CUSTOM_THEME_NAME })
-    if not storage.save_custom(config, { name = CUSTOM_THEME_NAME }) then
+
+    local name = config.name
+    if not name or name == "" or name == CUSTOM_THEME_NAME then
+        -- Fallback to input if empty in buffer
+        name = vim.fn.input("Theme Name: ", instance.theme_name ~= CUSTOM_THEME_NAME and instance.theme_name or "")
+        if name == "" then
+            vim.notify("Save cancelled: Name required", vim.log.levels.WARN)
+            return
+        end
+        config.name = name
+    end
+
+    theme.apply(config, { name = name })
+    notify_theme_change()
+    if not storage.save_custom(config, { name = name }) then
         return
     end
+    
+    instance.theme_name = name
     instance.saved_config = vim.deepcopy(config)
-    instance.snapshot = capture_snapshot(CUSTOM_THEME_NAME, config)
+    instance.snapshot = capture_snapshot(name, config)
     instance.dirty = false
     api.nvim_set_option_value("modified", false, { buf = instance.buf })
-    set_status(instance, "Theme saved", "DiagnosticOk")
+    set_status(instance, "Theme saved: " .. name, "DiagnosticOk")
     render_gradient_preview(instance, { palette = generator.palette() })
-    vim.notify("Custom theme saved", vim.log.levels.INFO)
+    vim.notify("Theme saved: " .. name, vim.log.levels.INFO)
 end
 
 local function close_instance(instance)
@@ -291,7 +358,8 @@ local function close_instance(instance)
     end
 end
 
-local function open_theme_creator()
+local function open_theme_creator(opts)
+    opts = opts or {}
     if active_instance and active_instance.buf and api.nvim_buf_is_valid(active_instance.buf) then
         if active_instance.win and api.nvim_win_is_valid(active_instance.win) then
             api.nvim_set_current_win(active_instance.win)
@@ -301,10 +369,12 @@ local function open_theme_creator()
         return
     end
 
+    local theme_name = opts.name or theme.current_name()
     local initial_config = current_theme_config()
-    local snapshot = capture_snapshot(theme.current_name(), initial_config)
-    local lines, preview_anchor = build_lines(initial_config)
+    local snapshot = capture_snapshot(theme_name, initial_config)
+    local lines, preview_anchor = build_lines(initial_config, theme_name)
     local buf = api.nvim_create_buf(false, true)
+    api.nvim_buf_set_name(buf, "ThemeCreator_" .. os.time())
     api.nvim_buf_set_lines(buf, 0, -1, false, lines)
     api.nvim_set_option_value("buftype", "acwrite", { buf = buf })
     api.nvim_set_option_value("bufhidden", "wipe", { buf = buf })
@@ -336,6 +406,7 @@ local function open_theme_creator()
     local instance = {
         buf = buf,
         win = win,
+        theme_name = theme_name,
         snapshot = snapshot,
         saved_config = vim.deepcopy(initial_config),
         status_line = 1,
