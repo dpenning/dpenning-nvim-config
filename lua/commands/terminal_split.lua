@@ -4,7 +4,8 @@ function M.open_terminal_80()
     -- Search for an existing terminal buffer
     local terminal_buf = -1
     for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-        if vim.bo[buf].buftype == "terminal" then
+        local name = vim.api.nvim_buf_get_name(buf)
+        if vim.bo[buf].buftype == "terminal" and (name:match("bash") or name:match("zsh")) then
             terminal_buf = buf
             break
         end
