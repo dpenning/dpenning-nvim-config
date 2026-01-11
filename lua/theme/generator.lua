@@ -137,8 +137,8 @@ function M.setup(config)
         Normal = { color = colors.fg }, -- Keep Normal tied to the theme foreground
         Comment = { gradient = "background_to_foreground", step = 2, fallback = colors.fg_dim },
         Constant = { gradient = "background_to_accent", step = 3, fallback = colors.info },
-        String = { gradient = "background_to_highlight", step = 6, fallback = colors.success },
-        Character = { gradient = "background_to_highlight", step = 3, fallback = colors.success },
+        String = { gradient = "highlight_to_accent", step = 2, fallback = colors.success },
+        Character = { gradient = "highlight_to_accent", step = 7, fallback = colors.success },
         Number = { gradient = "background_to_accent", step = 5, fallback = colors.warning },
         Boolean = { gradient = "background_to_accent", step = 6, fallback = colors.warning },
         Float = { gradient = "background_to_accent", step = 7, fallback = colors.warning },
@@ -156,6 +156,7 @@ function M.setup(config)
         Structure = { gradient = "background_to_highlight", step = 5, fallback = colors.info },
         Special = { gradient = "foreground_to_highlight", step = 3, fallback = colors.hint },
         SpecialChar = { gradient = "foreground_to_highlight", step = 2, fallback = colors.hint },
+        Delimiter = { gradient = "foreground_to_highlight", step = 5, fallback = colors.fg },
     }
 
     local syntax_colors = {}
@@ -195,6 +196,7 @@ function M.setup(config)
         Structure = { fg = syntax_colors.Structure },
         Special = { fg = syntax_colors.Special },
         SpecialChar = { fg = syntax_colors.SpecialChar },
+        Delimiter = { fg = syntax_colors.Delimiter },
         Underlined = { underline = true },
         Error = { fg = colors.error },
         Todo = { fg = colors.warning, bold = true },
@@ -247,6 +249,8 @@ function M.setup(config)
         ["@function.builtin"] = { fg = colors.accent_dim },
         ["@constructor"] = { fg = colors.accent },
         ["@keyword.function"] = { fg = colors.accent, italic = true },
+        ["@punctuation.delimiter"] = { fg = syntax_colors.Delimiter },
+        ["@punctuation.bracket"] = { fg = syntax_colors.Delimiter },
 
         -- File explorers
         Directory = { fg = colors.accent, bold = true },
