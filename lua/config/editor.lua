@@ -18,6 +18,9 @@ vim.opt.switchbuf = "useopen"
 vim.opt.splitright = true
 vim.opt.splitbelow = true
 
+-- Automatically read files when they are changed outside of Neovim
+vim.opt.autoread = true
+
 -- If a buffer lacks a treesitter parser, fall back to indent folds
 vim.api.nvim_create_autocmd("FileType", {
 	callback = function(args)
