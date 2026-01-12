@@ -1,5 +1,4 @@
 local generator = require("theme.generator")
-local presets = require("theme.presets")
 local storage = require("theme.storage")
 
 local M = {
@@ -38,22 +37,15 @@ end
 
 function M.list()
     local all_themes = {}
+    local db_themes = storage.get_all_themes()
     
-    -- Add presets
-    local preset_list = presets.list()
-    for _, p in ipairs(preset_list) do
-        table.insert(all_themes, p)
-    end
-
-    -- Add custom themes
-    local custom = storage.list_custom()
-    for name, config in pairs(custom) do
+    for name, config in pairs(db_themes) do
         table.insert(all_themes, {
             name = name,
-            label = name, -- Custom themes might not have a separate label
-            description = config.description or "Custom User Theme",
-            type = "custom",
-            config = config, -- Store config for easy access
+            label = config.label or name,
+            description = config.description or "User Theme",
+            type = "custom", -- Keeping "custom" type for compatibility with UI lists if they check it
+            config = config,
             foreground = config.foreground,
             background = config.background,
             highlight = config.highlight,
@@ -61,25 +53,18 @@ function M.list()
         })
     end
     
+    -- Sort by name for consistent UI
+    table.sort(all_themes, function(a, b) return a.name < b.name end)
+    
     return all_themes
 end
 
 function M.get(name)
-    local preset = presets.get(name)
-    if preset then
-        return preset
-    end
-    local custom = storage.get_custom(name)
-    if custom then
-        return {
-            name = name,
-            description = custom.description or "Custom User Theme",
-            type = "custom",
-            foreground = custom.foreground,
-            background = custom.background,
-            highlight = custom.highlight,
-            accent = custom.accent,
-        }
+    local theme = storage.get_theme(name)
+    if theme then
+        -- Ensure name is attached
+        theme.name = name
+        return theme
     end
     return nil
 end
@@ -100,10 +85,8 @@ function M.apply(name_or_config, opts)
 end
 
 function M.delete(name)
-    return storage.delete_custom(name)
+    return storage.delete_theme(name)
 end
-
-
 
 function M.current_name()
     return M.current
@@ -117,21 +100,12 @@ function M.last_config()
 end
 
 function M.load(default_name)
-    local saved = storage.load()
-    if type(saved) == "table" then
-        if saved.type == "custom" and saved.config then
-            apply_config(saved.config, { name = saved.name or "custom" })
-            return saved.name or "custom"
-        elseif saved.type == "preset" and saved.name and presets.get(saved.name) then
-            M.apply(saved.name)
-            return saved.name
-        end
-    elseif type(saved) == "string" then
-        if presets.get(saved) then
-            M.apply(saved)
-            return saved
-        end
+    local saved_name = storage.load()
+    if saved_name and M.get(saved_name) then
+        M.apply(saved_name)
+        return saved_name
     end
+
     if default_name then
         M.apply(default_name)
         return default_name

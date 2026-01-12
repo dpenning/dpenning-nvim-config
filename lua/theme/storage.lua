@@ -17,7 +17,7 @@ local function preference_path()
 end
 
 local function themes_db_path()
-    return get_data_dir() .. "/themes.json"
+    return vim.fn.stdpath("config") .. "/lua/theme/themes.json"
 end
 
 local function trim(s)
@@ -129,27 +129,8 @@ function M.load()
     -- JSON format
     local ok, decoded = pcall(json_decode, content)
     if ok and type(decoded) == "table" then
-        if decoded.type == "preset" then
-            return { type = "preset", name = decoded.name }
-        elseif decoded.type == "custom" then
-            -- Fallback: if we have a full config in preference, use it
-            if decoded.config then
-                return {
-                    type = "custom",
-                    name = decoded.name or "custom",
-                    config = canonical_config(decoded.config),
-                }
-            end
-             -- Otherwise, try to find it in the DB
-            local db = load_db()
-            local theme = db[decoded.name]
-            if theme then
-                return {
-                    type = "custom",
-                    name = decoded.name,
-                    config = canonical_config(theme),
-                }
-            end
+        if decoded.name then
+            return decoded.name
         end
     end
     return nil
@@ -164,34 +145,25 @@ function M.save(name)
     if name == "" then
         return false
     end
-    -- We just save the name now. The loader needs to know if it's custom or preset.
-    -- To keep it simple, we'll just save the name string for presets,
-    -- and a JSON object for custom themes pointing to the name.
-    -- But existing code calls M.save("preset_name").
-    
-    -- Let's try to detect if it's a known preset?
-    -- Actually, strict separation is better.
-    -- If M.save is called with a string, we assume it's a name.
-    -- We can just write the name string. M.load handles plain strings.
     return write_file(preference_path(), name)
 end
 
--- Returns a map of all custom themes: { [name] = config }
-function M.list_custom()
+-- Returns a map of all themes: { [name] = config }
+function M.get_all_themes()
     return load_db()
 end
 
--- Returns a specific custom theme config
-function M.get_custom(name)
+-- Returns a specific theme config
+function M.get_theme(name)
     local db = load_db()
     return db[name]
 end
 
--- Saves/Upserts a custom theme into the DB
-function M.save_custom(config, opts)
+-- Saves/Upserts a theme into the DB
+function M.save_theme(config, opts)
     local sanitized = canonical_config(config)
     if not sanitized then
-        vim.notify("Cannot save invalid custom theme", vim.log.levels.ERROR)
+        vim.notify("Cannot save invalid theme", vim.log.levels.ERROR)
         return false
     end
     
@@ -205,22 +177,13 @@ function M.save_custom(config, opts)
         return false
     end
 
-    -- Also update the active preference to point to this new custom theme
-    local pref = {
-        type = "custom",
-        name = name,
-        -- We don't strictly need to duplicate config here, but it's safe for fallback
-        config = sanitized 
-    }
-    local ok, encoded = pcall(json_encode, pref)
-    if ok then
-        write_file(preference_path(), encoded)
-    end
+    -- Also update the active preference to point to this new theme
+    write_file(preference_path(), name)
 
     return true
 end
 
-function M.delete_custom(name)
+function M.delete_theme(name)
     local db = load_db()
     if not db[name] then
         return false
