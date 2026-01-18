@@ -16,3 +16,6 @@ if vim.g.neovide then
 	require("config.neovide")
 	require("commands.snap_window")
 end
+
+-- Load the saved active theme
+require("theme").load()

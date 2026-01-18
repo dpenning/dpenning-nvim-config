@@ -7,6 +7,7 @@
 -- g -> content
 -- b -> buffer
 -- c -> clear
+-- C -> system copy
 -- v -> visual
 
 --------------------------------
@@ -19,8 +20,10 @@ if has_fzf then
   vim.keymap.set('n', '<leader>ff', fzf.files, { desc = 'Search file names' })
   vim.keymap.set('n', '<leader>fg', fzf.live_grep, { desc = 'Search Content of files' })
   vim.keymap.set('n', '<leader>fb', fzf.buffers, { desc = 'Search open buffers' })
-  vim.keymap.set({'n', 'v'}, '<leader>fvf', fzf.grep_visual, { desc = 'Search files from highlight'})
-  vim.keymap.set({'n', 'v'}, '<leader>fvg', fzf.grep_visual, { desc = 'Search content from highlight'})
+ 
+  -- take whats in the system copy register and use that for search
+  vim.keymap.set('n', '<leader>fCf', function() fzf.files({ query = vim.fn.getreg("+") }) end, { desc = 'Search file names using clipboard' })
+  vim.keymap.set('n', '<leader>fCg', function() fzf.live_grep({ query = vim.fn.getreg("+") }) end, { desc = 'Search Content of files using clipboard' })
 end
 
 -----------------------------

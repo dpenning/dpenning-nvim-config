@@ -5,6 +5,13 @@ vim.opt.foldlevel = 99
 vim.opt.foldlevelstart = 99
 vim.opt.foldenable = true
 
+-- Tabs should be 2 spaces and never create tabs in normal mode
+vim.opt.tabstop = 2
+vim.opt.shiftwidth = 2
+vim.opt.expandtab = true
+vim.opt.softtabstop = -1
+vim.opt.smarttab = true
+
 -- Provide line number with relative for easy navigation
 vim.opt.number = true
 vim.opt.relativenumber = true
@@ -20,6 +27,12 @@ vim.opt.splitbelow = true
 
 -- Automatically read files when they are changed outside of Neovim
 vim.opt.autoread = true
+vim.api.nvim_create_autocmd({ "BufEnter", "CursorHold", "CursorHoldI", "FocusGained" }, {
+  command = "if mode() != 'c' | checktime | endif",
+  pattern = "*",
+})
+
+vim.opt.cursorline = true
 
 -- If a buffer lacks a treesitter parser, fall back to indent folds
 vim.api.nvim_create_autocmd("FileType", {

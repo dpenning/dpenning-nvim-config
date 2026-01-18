@@ -115,5 +115,131 @@
         "background": "#0f1410",
         "highlight": "#4a6b52",
         "accent": "#5f8c6d"
+    },
+    "hollow_knight_void": {
+        "name": "hollow_knight_void",
+        "label": "Hollow Knight (Void)",
+        "description": "Deep abyss with soul-blue accents",
+        "foreground": "#d4dbe3",
+        "background": "#080b12",
+        "highlight": "#3e5061",
+        "accent": "#8baecf"
+    },
+    "hollow_knight_pale": {
+        "name": "hollow_knight_pale",
+        "label": "Hollow Knight (Pale)",
+        "description": "Radiant white palace with regal silver",
+        "foreground": "#1e2329",
+        "background": "#f2f4f7",
+        "highlight": "#dce3eb",
+        "accent": "#6d839c"
+    },
+    "mirrors_edge_glass": {
+        "name": "mirrors_edge_glass",
+        "label": "Mirror's Edge (Glass)",
+        "description": "Stark city white with runner red accents",
+        "foreground": "#2e2e2e",
+        "background": "#ffffff",
+        "highlight": "#e0e0e0",
+        "accent": "#ff2a2a"
+    },
+    "mirrors_edge_runner": {
+        "name": "mirrors_edge_runner",
+        "label": "Mirror's Edge (Runner)",
+        "description": "Dark sleek shadows with vibrant signal red",
+        "foreground": "#e0e0e0",
+        "background": "#121212",
+        "highlight": "#333333",
+        "accent": "#ff4040"
+    },
+    "subnautica_abyss": {
+        "name": "subnautica_abyss",
+        "label": "Subnautica (Abyss)",
+        "description": "Deep ocean depths with bioluminescent accents",
+        "foreground": "#a8e6cf",
+        "background": "#060b14",
+        "highlight": "#1a3c40",
+        "accent": "#00ffd0"
+    },
+    "subnautica_shallows": {
+        "name": "subnautica_shallows",
+        "label": "Subnautica (Shallows)",
+        "description": "Tropical shallow waters with coral highlights",
+        "foreground": "#004d40",
+        "background": "#e0f7fa",
+        "highlight": "#b2ebf2",
+        "accent": "#ff8a65"
+    },
+    "celeste_summit": {
+        "name": "celeste_summit",
+        "label": "Celeste (Summit)",
+        "description": "Cool mountain purples with strawberry red accents",
+        "foreground": "#e0def4",
+        "background": "#191724",
+        "highlight": "#b1a9e8",
+        "accent": "#eb6f92"
+    },
+    "celeste_trail": {
+        "name": "celeste_trail",
+        "label": "Celeste (Trail)",
+        "description": "Bright mountain morning with snowy highlights",
+        "foreground": "#575279",
+        "background": "#f2f0e5",
+        "highlight": "#dfdad9",
+        "accent": "#907aa9"
+    },
+    "firewatch_dusk": {
+        "name": "firewatch_dusk",
+        "label": "Firewatch (Dusk)",
+        "description": "Deep forest silhouettes with sunset amber",
+        "foreground": "#fff1e3",
+        "background": "#231111",
+        "highlight": "#4a2525",
+        "accent": "#ff9500"
+    },
+    "firewatch_shoshone": {
+        "name": "firewatch_shoshone",
+        "label": "Firewatch (Shoshone)",
+        "description": "Warm golden hour wilderness",
+        "foreground": "#432818",
+        "background": "#f9dcc4",
+        "highlight": "#f4a261",
+        "accent": "#e76f51"
+    },
+    "persona_phantom": {
+        "name": "persona_phantom",
+        "label": "Persona (Phantom)",
+        "description": "High-contrast heist black and red",
+        "foreground": "#ffffff",
+        "background": "#0a0a0a",
+        "highlight": "#2d2d2d",
+        "accent": "#d32f2f"
+    },
+    "persona_social": {
+        "name": "persona_social",
+        "label": "Persona (Social)",
+        "description": "Stark white and sharp red aesthetic",
+        "foreground": "#1a1a1a",
+        "background": "#f0f0f0",
+        "highlight": "#d1d1d1",
+        "accent": "#ff0000"
+    },
+    "cyberpunk_night": {
+        "name": "cyberpunk_night",
+        "label": "Cyberpunk (Night City)",
+        "description": "Neon blue and iconic cyberpunk yellow",
+        "foreground": "#00f0ff",
+        "background": "#0d0d0d",
+        "highlight": "#1a1a1a",
+        "accent": "#fcee0a"
+    },
+    "cyberpunk_glitch": {
+        "name": "cyberpunk_glitch",
+        "label": "Cyberpunk (Glitch)",
+        "description": "Blinding neons and high-tech light grey",
+        "foreground": "#121212",
+        "background": "#e0e0e0",
+        "highlight": "#00f0ff",
+        "accent": "#ff00ff"
     }
 }

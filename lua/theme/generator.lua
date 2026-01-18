@@ -30,17 +30,10 @@ function M.setup(config)
         return gradient
     end
 
-    local function mix_with_background(target, amount)
-        return utils.mix(background_color, target, amount)
-    end
-
     -- 1. Generate Palette
     local colors = {}
 
     local gradients = {
-        background_to_foreground = build_gradient(background_color, foreground_color),
-        background_to_highlight = build_gradient(background_color, highlight_color),
-        background_to_accent = build_gradient(background_color, accent_color),
         foreground_to_highlight = build_gradient(foreground_color, highlight_color),
         foreground_to_accent = build_gradient(foreground_color, accent_color),
         highlight_to_accent = build_gradient(highlight_color, accent_color),
@@ -87,30 +80,27 @@ function M.setup(config)
     colors.input_highlight = highlight_color
     colors.input_accent = accent_color
 
-    -- Backgrounds derived from gradients
-    local bg_gradient = gradients.background_to_foreground
+    -- Backgrounds
     colors.bg = background_color
     colors.bg_dark = utils.adjust_lightness(background_color, -0.05)
     colors.bg_darker = utils.adjust_lightness(background_color, -0.10)
     colors.bg_light = utils.adjust_lightness(background_color, 0.05)
     colors.bg_lighter = utils.adjust_lightness(background_color, 0.10)
-    colors.bg_highlight = mix_with_background(highlight_color, 0.35) -- Selection background
+    colors.bg_highlight = utils.mix(background_color, highlight_color, 0.35) -- Selection background
 
-    -- Foregrounds (Text) from gradients
-    local fg_gradient = gradients.background_to_foreground
-    colors.fg = sample_gradient(fg_gradient, 1) or mix_with_background(foreground_color, 0.9)
-    colors.fg_dim = sample_gradient(fg_gradient, 0.75) or mix_with_background(foreground_color, 0.65)
-    colors.fg_dark = sample_gradient(fg_gradient, 0.5) or mix_with_background(foreground_color, 0.45)
+    -- Foregrounds (Text)
+    colors.fg = foreground_color
+    colors.fg_dim = utils.mix(background_color, foreground_color, 0.75)
+    colors.fg_dark = utils.mix(background_color, foreground_color, 0.5)
 
-    -- Accents derived from background -> accent gradients
-    local accent_gradient = gradients.background_to_accent
-    colors.accent = sample_gradient(accent_gradient, 1) or mix_with_background(accent_color, 0.85)
-    colors.accent_dim = sample_gradient(accent_gradient, 0.7) or mix_with_background(accent_color, 0.55)
+    -- Accents
+    colors.accent = accent_color
+    colors.accent_dim = utils.mix(background_color, accent_color, 0.7)
 
     -- Semantic Colors (tint canonical hues, then blend with background)
     local function semantic_color(hex)
         local tinted = utils.mix(hex, accent_color, 0.35)
-        local blend_target = sample_gradient(gradients.background_to_highlight, 0.85) or background_color
+        local blend_target = utils.mix(background_color, highlight_color, 0.85)
         return utils.mix(blend_target, tinted, 0.85)
     end
 
@@ -124,36 +114,34 @@ function M.setup(config)
     colors.indent_levels = {}
     local indent_mix_start = 0.35
     local indent_mix_step = 0.12
-    local highlight_gradient = gradients.background_to_highlight
     for index, _ in ipairs(constants.indent_highlights) do
         local amount = math.min(indent_mix_start + (index - 1) * indent_mix_step, 0.95)
-        colors.indent_levels[index] = sample_gradient(highlight_gradient, amount)
-            or mix_with_background(highlight_color, amount)
+        colors.indent_levels[index] = utils.mix(background_color, highlight_color, amount)
     end
 
-    local nontext_color = gradient_color("background_to_foreground", 6, colors.fg_dim)
+    local nontext_color = utils.mix(background_color, foreground_color, 0.75)
 
     local syntax_specs = {
         Normal = { color = colors.fg }, -- Keep Normal tied to the theme foreground
-        Comment = { gradient = "background_to_foreground", step = 2, fallback = colors.fg_dim },
-        Constant = { gradient = "background_to_accent", step = 3, fallback = colors.info },
-        String = { gradient = "highlight_to_accent", step = 2, fallback = colors.success },
-        Character = { gradient = "highlight_to_accent", step = 7, fallback = colors.success },
-        Number = { gradient = "background_to_accent", step = 5, fallback = colors.warning },
-        Boolean = { gradient = "background_to_accent", step = 6, fallback = colors.warning },
-        Float = { gradient = "background_to_accent", step = 7, fallback = colors.warning },
+        Comment = { color = colors.fg_dim },
+        Constant = { gradient = "highlight_to_accent", step = 2, fallback = colors.info },
+        String = { gradient = "highlight_to_accent", step = 3, fallback = colors.success },
+        Character = { gradient = "highlight_to_accent", step = 4, fallback = colors.success },
+        Number = { gradient = "highlight_to_accent", step = 2, fallback = colors.warning },
+        Boolean = { gradient = "highlight_to_accent", step = 2, fallback = colors.warning },
+        Float = { gradient = "highlight_to_accent", step = 2, fallback = colors.warning },
         Identifier = { gradient = "foreground_to_highlight", step = 6, fallback = colors.fg },
         Function = { gradient = "foreground_to_accent", step = 7, fallback = colors.accent },
         Statement = { gradient = "foreground_to_accent", step = 6, fallback = colors.accent },
         Conditional = { gradient = "foreground_to_accent", step = 5, fallback = colors.accent },
         Repeat = { gradient = "highlight_to_accent", step = 5, fallback = colors.accent },
         Label = { gradient = "foreground_to_highlight", step = 4, fallback = colors.accent },
-        Operator = { gradient = "background_to_foreground", step = 4, fallback = colors.fg_dim },
+        Operator = { gradient = "foreground_to_highlight", step = 3, fallback = colors.fg_dim },
         Keyword = { gradient = "highlight_to_accent", step = 4, fallback = colors.accent_dim },
         Exception = { gradient = "highlight_to_accent", step = 6, fallback = colors.error },
         PreProc = { gradient = "foreground_to_highlight", step = 7, fallback = colors.hint },
         Type = { gradient = "foreground_to_highlight", step = 5, fallback = colors.info },
-        Structure = { gradient = "background_to_highlight", step = 5, fallback = colors.info },
+        Structure = { gradient = "foreground_to_highlight", step = 4, fallback = colors.info },
         Special = { gradient = "foreground_to_highlight", step = 3, fallback = colors.hint },
         SpecialChar = { gradient = "foreground_to_highlight", step = 2, fallback = colors.hint },
         Delimiter = { gradient = "foreground_to_highlight", step = 5, fallback = colors.fg },
@@ -192,6 +180,10 @@ function M.setup(config)
         Keyword = { fg = syntax_colors.Keyword, italic = true },
         Exception = { fg = syntax_colors.Exception },
         PreProc = { fg = syntax_colors.PreProc },
+        Include = { fg = syntax_colors.PreProc },
+        Define = { fg = syntax_colors.PreProc },
+        Macro = { fg = syntax_colors.PreProc },
+        PreCondit = { fg = syntax_colors.PreProc },
         Type = { fg = syntax_colors.Type },
         Structure = { fg = syntax_colors.Structure },
         Special = { fg = syntax_colors.Special },
@@ -249,6 +241,11 @@ function M.setup(config)
         ["@function.builtin"] = { fg = colors.accent_dim },
         ["@constructor"] = { fg = colors.accent },
         ["@keyword.function"] = { fg = colors.accent, italic = true },
+        ["@keyword.directive"] = { fg = syntax_colors.PreProc },
+        ["@keyword.import"] = { fg = syntax_colors.PreProc },
+        ["@preproc"] = { fg = syntax_colors.PreProc },
+        ["@string.special.path"] = { fg = syntax_colors.String },
+        ["@string.documentation"] = { fg = syntax_colors.String },
         ["@punctuation.delimiter"] = { fg = syntax_colors.Delimiter },
         ["@punctuation.bracket"] = { fg = syntax_colors.Delimiter },
 
