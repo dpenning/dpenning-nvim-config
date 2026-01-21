@@ -12,6 +12,26 @@ vim.opt.expandtab = true
 vim.opt.softtabstop = -1
 vim.opt.smarttab = true
 
+-- Some plugins or EditorConfig files can override the indentation settings
+-- above. Hard reset them whenever a real buffer is entered.
+local function enforce_two_space_indent(event)
+	local buf = event.buf
+	if not vim.api.nvim_buf_is_valid(buf) then
+		return
+	end
+	if vim.bo[buf].buftype ~= "" then
+		return
+	end
+	vim.bo[buf].tabstop = 2
+	vim.bo[buf].shiftwidth = 2
+	vim.bo[buf].softtabstop = 2
+	vim.bo[buf].expandtab = true
+end
+
+vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter", "BufReadPost" }, {
+	callback = enforce_two_space_indent,
+})
+
 -- Provide line number with relative for easy navigation
 vim.opt.number = true
 vim.opt.relativenumber = true

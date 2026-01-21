@@ -46,8 +46,8 @@ vim.keymap.set('n', '<leader>en', vim.diagnostic.goto_next, { desc = 'Next diagn
 -- Terminal Integration
 -----------------------
 
--- Open an 80-character wide vertical split with a terminal
-vim.keymap.set('n', '<leader>tt', ':Term80<CR>', { desc = 'Open the Terminal 80' })
+-- Toggle an 80-character wide vertical split terminal
+vim.keymap.set('n', '<leader>tt', ':Term80<CR>', { desc = 'Toggle the Terminal 80 split' })
 vim.keymap.set('n', '<leader>tbc<CR>', ':TerminalClear<CR>', { desc = 'Clear the terminal and enter insert mode'})
 
 ---------------------
