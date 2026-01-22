@@ -6,13 +6,13 @@ return {
     'neovim/nvim-lspconfig',
     dependencies = { 'hrsh7th/cmp-nvim-lsp' }, -- Example dependency for completion
     config = function()
+      local lspconfig = require('lspconfig')
+
       -- Setup clangd
-      -- Enable the language server.
-      -- To customize, use vim.lsp.config('clangd', { ... }) before enabling.
-      vim.lsp.enable('clangd')
+      lspconfig.clangd.setup{}
 
       -- Basic Zig language server support via zls
-      vim.lsp.enable('zls')
+      lspconfig.zls.setup{}
 
       -- Keymaps for LSP actions (optional, but recommended)
       vim.api.nvim_create_autocmd('LspAttach', {

@@ -20,6 +20,7 @@ if has_fzf then
   vim.keymap.set('n', '<leader>ff', fzf.files, { desc = 'Search file names' })
   vim.keymap.set('n', '<leader>fg', fzf.live_grep, { desc = 'Search Content of files' })
   vim.keymap.set('n', '<leader>fb', fzf.buffers, { desc = 'Search open buffers' })
+  vim.keymap.set('n', '<leader>fs', '<cmd>SwitchSourceHeader<CR>', { desc = 'Switch between Source and Header' })
  
   -- take whats in the system copy register and use that for search
   vim.keymap.set('n', '<leader>fCf', function() fzf.files({ query = vim.fn.getreg("+") }) end, { desc = 'Search file names using clipboard' })
