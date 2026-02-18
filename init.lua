@@ -12,6 +12,7 @@ require("commands.switch_source_header")
 require("commands.theme")
 require("commands.theme_creator")
 require("commands.theme_debug")
+require("commands.git_diff_open")
 
 if vim.g.neovide then
 	require("config.neovide")

@@ -57,3 +57,9 @@ vim.keymap.set('n', '<leader>tbc<CR>', ':TerminalClear<CR>', { desc = 'Clear the
 
 vim.keymap.set('n', '<leader>w80', ':vertical resize 80<CR>', { desc = 'Resize the current window to 80 char'})
 vim.keymap.set('n', '<leader>wf', ':Fix<CR>', { desc = 'Fix the window layout'})
+
+--------------------
+-- Git Integration
+--------------------
+
+vim.keymap.set('n', '<leader>gdo', '<cmd>GitDiffOpen<cr>', { desc = 'Git Diff Open' })
