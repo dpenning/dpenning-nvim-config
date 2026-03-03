@@ -1,6 +1,13 @@
 local terminal_utils = require("utils.terminal_utils")
 local M = {}
 
+local TRACK_VAR = "is_term80_tracked"
+local tracked_buf = nil
+
+local function is_valid_terminal(buf)
+       return buf and vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].buftype == "terminal"
+end
+
 function M.open_terminal_80()
     -- Search for the main terminal buffer
     local terminal_buf = terminal_utils.find_main_terminal()
@@ -21,6 +28,7 @@ function M.open_terminal_80()
         local new_buf = vim.api.nvim_get_current_buf()
         terminal_utils.mark_as_main(new_buf)
     end
+end
 
 local function has_track_flag(buf)
 	if not is_valid_terminal(buf) then

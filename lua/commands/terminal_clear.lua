@@ -8,7 +8,7 @@ local function do_clear()
     vim.cmd("startinsert")
 end
 
-vim.api.nvim_create_user_command('ClearTerm', function()
+vim.api.nvim_create_user_command('TerminalClear', function()
     if vim.bo.buftype == 'terminal' then
         do_clear()
         return
