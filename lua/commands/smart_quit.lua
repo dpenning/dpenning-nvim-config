@@ -1,3 +1,5 @@
+local buffer_manager = require("utils.buffer_manager")
+
 local function smart_quit_disabled()
   local ok, value = pcall(vim.api.nvim_buf_get_var, 0, 'smart_quit_disabled')
   if ok and value then
@@ -12,16 +14,14 @@ local function smart_quit_disabled()
   return false
 end
 
-local function open_explorer(bang)
-  if bang then
-    pcall(vim.cmd, "silent! edit!")
-  end
-
-  vim.cmd("Explorer")
+local function close_buffer(bang)
+  local state = buffer_manager.get_editor_state()
+  local plan = buffer_manager.get_close_plan(state, state.current_buf)
+  buffer_manager.apply_plan(plan, bang)
 end
 
 -- 1. The SmartQuit Command
--- Handles the logic: "If in file, go to explorer. If in explorer, quit."
+-- Handles the logic: "If in file, close buffer but keep split. If in tool/explorer, quit window."
 vim.api.nvim_create_user_command("SmartQuit", function(opts)
   if smart_quit_disabled() then
     if opts.bang then
@@ -31,18 +31,21 @@ vim.api.nvim_create_user_command("SmartQuit", function(opts)
     end
     return
   end
+
   local explorers = { "netrw", "NvimTree", "neo-tree", "oil" }
+  local buftype = vim.bo.buftype
+  local filetype = vim.bo.filetype
   
-  if vim.tbl_contains(explorers, vim.bo.filetype) then
-    -- We are in the explorer: actually quit
+  -- If it's an explorer or a special tool window, just quit the window
+  if vim.tbl_contains(explorers, filetype) or buftype == "terminal" or buftype == "quickfix" then
     if opts.bang then
       vim.cmd("quit!")
     else
       vim.cmd("quit")
     end
   else
-    -- We are in a file: go back to explorer
-    open_explorer(opts.bang)
+    -- We are in a real file: close the buffer but keep the window open
+    close_buffer(opts.bang)
   end
 end, { bang = true })
 

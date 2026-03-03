@@ -1,23 +1,6 @@
-require("config.leader")
-require("config.lazy")
-require("config.keymaps")
-require("config.shell")
-require("config.editor")
-require("commands.explorer_touch")
-require("commands.explorer")
-require("commands.fix")
-require("commands.reload")
-require("commands.terminal_split")
-require("commands.switch_source_header")
-require("commands.theme")
-require("commands.theme_creator")
-require("commands.theme_debug")
-require("commands.git_diff_open")
-
-if vim.g.neovide then
-	require("config.neovide")
-	require("commands.snap_window")
-end
+-- Load configurations and commands
+require("config")
+require("commands")
 
 -- Load the saved active theme
 require("theme").load()

@@ -1,6 +1,7 @@
 local theme = require("theme")
-local creator = require("commands.theme_creator")
+local creator = require("theme.ui.creator")
 local utils = require("theme.utils")
+local float = require("theme.ui.float")
 
 local function is_light(hex)
     if not hex then return false end
@@ -82,28 +83,11 @@ local function open_theme_picker()
     local max_height = math.max(10, math.floor(vim.o.lines * 0.7))
     local height = math.min(#lines, max_height)
 
-    local editor_height = vim.o.lines
-    local editor_width = vim.o.columns
-    local row = math.max(0, math.floor((editor_height - height) / 2) - 1)
-    local col = math.max(0, math.floor((editor_width - width) / 2))
-
-    local win = vim.api.nvim_open_win(buf, true, {
-        relative = "editor",
-        style = "minimal",
-        row = row,
-        col = col,
+    local win = float.create(buf, {
         width = width,
         height = height,
-        border = "rounded",
-        zindex = 60,
         title = " Theme Manager ",
-        title_pos = "center",
     })
-
-    vim.api.nvim_set_option_value("wrap", false, { win = win })
-    vim.api.nvim_set_option_value("cursorline", true, { win = win })
-    vim.api.nvim_set_option_value("number", false, { win = win })
-    vim.api.nvim_set_option_value("relativenumber", false, { win = win })
 
     local saved_snapshot = {
         name = current_name,
@@ -257,7 +241,7 @@ local function open_theme_picker()
     end
 end
 
-vim.api.nvim_create_user_command("Theme", open_theme_picker, {})
+
 
 return {
     open = open_theme_picker,

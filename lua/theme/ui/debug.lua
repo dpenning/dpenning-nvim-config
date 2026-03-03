@@ -605,12 +605,15 @@ local function refresh_buffer(buf)
     end)
 end
 
-vim.api.nvim_create_user_command("ThemeDebug", function()
+
+
+local function open()
     local buf = create_buffer()
     populate_buffer(buf)
     open_window(buf)
-end, {})
+end
 
 return {
+    open = open,
     refresh = refresh_buffer,
 }

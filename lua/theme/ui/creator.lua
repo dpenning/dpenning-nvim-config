@@ -2,7 +2,8 @@ local api = vim.api
 local theme = require("theme")
 local generator = require("theme.generator")
 local storage = require("theme.storage")
-local theme_debug = require("commands.theme_debug")
+local theme_debug = require("theme.ui.debug")
+local float = require("theme.ui.float")
 
 local DEFAULT_CONFIG = {
     foreground = "#cdd6f4",
@@ -384,17 +385,10 @@ local function open_theme_creator(opts)
 
     local width = math.max(40, max_width(lines) + 4)
     local height = #lines + 2
-    local row = math.floor((vim.o.lines - height) / 2)
-    local col = math.floor((vim.o.columns - width) / 2)
-    local win = api.nvim_open_win(buf, true, {
-        relative = "editor",
-        row = math.max(row, 1),
-        col = math.max(col, 1),
+    local win = float.create(buf, {
         width = width,
         height = height,
-        style = "minimal",
         border = "rounded",
-        zindex = 60,
     })
 
     api.nvim_set_option_value("winhighlight", "NormalFloat:Normal", { win = win })
@@ -445,7 +439,7 @@ local function open_theme_creator(opts)
     })
 end
 
-vim.api.nvim_create_user_command("ThemeCreator", open_theme_creator, {})
+
 
 return {
     open = open_theme_creator,
