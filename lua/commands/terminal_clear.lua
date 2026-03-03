@@ -1,3 +1,5 @@
+local terminal_utils = require("utils.terminal_utils")
+
 local function do_clear()
     vim.opt_local.scrollback = 1
     vim.api.nvim_command("sleep 10m")
@@ -12,14 +14,8 @@ vim.api.nvim_create_user_command('ClearTerm', function()
         return
     end
 
-    -- Search for an existing terminal buffer
-    local terminal_buf = -1
-    for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-        if vim.bo[buf].buftype == "terminal" then
-            terminal_buf = buf
-            break
-        end
-    end
+    -- Search for the main terminal buffer
+    local terminal_buf = terminal_utils.find_main_terminal()
 
     if terminal_buf == -1 then
         print("No terminal buffer found.")
