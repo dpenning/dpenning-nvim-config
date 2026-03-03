@@ -109,20 +109,7 @@ return {
     ------------------------------------------------------------------
     -- fzf-lua setup
     ------------------------------------------------------------------
-    fzf.setup({
-      winopts = {
-        on_create = function()
-          -- Paste from clipboard with Cmd+v (stripping newlines)
-          vim.keymap.set("t", "<D-v>", function()
-            local text = vim.fn.getreg("+")
-            if text then
-              text = text:gsub("[\n\r]", "")
-              vim.api.nvim_feedkeys(text, "n", true)
-            end
-          end, { buffer = true, nowait = true })
-        end,
-      },
-    })
+    fzf.setup({winopts = {}})
 
   end,
 }

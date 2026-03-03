@@ -51,6 +51,11 @@ vim.keymap.set('n', '<leader>en', vim.diagnostic.goto_next, { desc = 'Next diagn
 vim.keymap.set('n', '<leader>tt', ':Term80<CR>', { desc = 'Toggle the Terminal 80 split' })
 vim.keymap.set('n', '<leader>tbc<CR>', ':TerminalClear<CR>', { desc = 'Clear the terminal and enter insert mode'})
 
+-- Always paste from system clipboard in terminal with Cmd+V
+vim.keymap.set('t', '<D-v>', function()
+  vim.api.nvim_paste(vim.fn.getreg('+'), false, -1)
+end, { desc = 'Paste from system clipboard' })
+
 ---------------------
 -- Window Integration
 ---------------------
