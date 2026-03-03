@@ -57,12 +57,7 @@ return {
         close_if_last_window = false,
         window = {
           width = 34,
-          mappings = {
-            ["<space>"] = "toggle_node",
-            ["S"] = "split_with_window_picker",
-            ["s"] = "vsplit_with_window_picker",
-            ["H"] = "toggle_hidden",
-          },
+          mappings = {},
         },
         filesystem = {
           follow_current_file = { enabled = true, leave_dirs_open = true },
