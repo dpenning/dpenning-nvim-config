@@ -183,6 +183,9 @@ function M.save_theme(config, opts)
     return true
 end
 
+-- Backwards-compatible alias used by older theme creator code
+M.save_custom = M.save_theme
+
 function M.delete_theme(name)
     local db = load_db()
     if not db[name] then

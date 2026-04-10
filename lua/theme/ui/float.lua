@@ -11,7 +11,7 @@ function M.create(buf, opts)
     local row = math.max(0, math.floor((editor_height - height) / 2) - 1)
     local col = math.max(0, math.floor((editor_width - width) / 2))
 
-    local win = vim.api.nvim_open_win(buf, true, {
+    local win_opts = {
         relative = "editor",
         style = "minimal",
         row = row,
@@ -20,9 +20,14 @@ function M.create(buf, opts)
         height = height,
         border = opts.border or "rounded",
         zindex = 60,
-        title = opts.title,
-        title_pos = opts.title_pos or "center",
-    })
+    }
+
+    if opts.title then
+        win_opts.title = opts.title
+        win_opts.title_pos = opts.title_pos or "center"
+    end
+
+    local win = vim.api.nvim_open_win(buf, true, win_opts)
 
     vim.api.nvim_set_option_value("wrap", false, { win = win })
     vim.api.nvim_set_option_value("cursorline", true, { win = win })
