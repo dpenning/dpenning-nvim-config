@@ -34,6 +34,7 @@ end
 vim.keymap.set('n', '<leader>bp', '<cmd>BufferLineCyclePrev<CR>', { desc = 'Open the previous buffer' })
 vim.keymap.set('n', '<leader>bn', '<cmd>BufferLineCycleNext<CR>', { desc = 'Open the next buffer' })
 vim.keymap.set('n', '<leader>bc', '<cmd>BufferLinePick<CR>', { desc = 'Pick a buffer from the buffer line by index' })
+vim.keymap.set('n', '<leader>bb', '<cmd>Explorer<CR>', { desc = 'Toggle Neo-tree' })
 
 ----------------------------
 -- Error message integration
