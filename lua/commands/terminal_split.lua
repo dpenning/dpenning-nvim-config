@@ -4,8 +4,20 @@ local M = {}
 local TRACK_VAR = "is_term80_tracked"
 local tracked_buf = nil
 
+local function is_terminal_buffer(buf)
+	return buf and vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].buftype == "terminal"
+end
+
+local function has_track_flag(buf)
+	if not is_terminal_buffer(buf) then
+		return false
+	end
+	local ok, value = pcall(vim.api.nvim_buf_get_var, buf, TRACK_VAR)
+	return ok and value and value ~= 0
+end
+
 local function is_valid_terminal(buf)
-       return buf and vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].buftype == "terminal"
+	return is_terminal_buffer(buf) and (has_track_flag(buf) or terminal_utils.is_shell_terminal(buf))
 end
 
 function M.open_terminal_80()
@@ -30,16 +42,8 @@ function M.open_terminal_80()
     end
 end
 
-local function has_track_flag(buf)
-	if not is_valid_terminal(buf) then
-		return false
-	end
-	local ok, value = pcall(vim.api.nvim_buf_get_var, buf, TRACK_VAR)
-	return ok and value and value ~= 0
-end
-
 local function mark_tracked(buf)
-	if not is_valid_terminal(buf) then
+	if not is_terminal_buffer(buf) then
 		return
 	end
 	tracked_buf = buf
@@ -110,6 +114,7 @@ local function create_terminal_window()
 	vim.cmd("term")
 	local buf = vim.api.nvim_get_current_buf()
 	mark_tracked(buf)
+	terminal_utils.mark_as_main(buf)
 	vim.cmd("startinsert")
 end
 
